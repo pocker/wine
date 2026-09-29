@@ -59,6 +59,11 @@ void dcomp_unlock(void)
     LeaveCriticalSection(&dcomp_cs);
 }
 
+/* Undocumented device interface queried by the WebView2 154 GPU process. Without it, WebView2 never sets up
+ * its composition target, and the host window stays blank. Treat it like the other undocumented device
+ * interfaces. */
+static const GUID IID_IDCompositionDeviceUndocumented2 = {0x4ca97a18,0xcbfd,0x4b0d,{0x89,0xe1,0xf7,0xfa,0x86,0xd8,0xd6,0x3e}};
+
 static HRESULT STDMETHODCALLTYPE device_QueryInterface(IDCompositionDevice *iface,
         REFIID iid, void **out)
 {
@@ -78,13 +83,15 @@ static HRESULT STDMETHODCALLTYPE device_QueryInterface(IDCompositionDevice *ifac
                   || IsEqualGUID(iid, &IID_IDCompositionDevice3)
                   || IsEqualGUID(iid, &IID_IDCompositionDesktopDevice)))
               || IsEqualGUID(iid, &IID_IDCompositionDesktopDevicePartner)
-              || IsEqualGUID(iid, &IID_IDCompositionDeviceUnknown))
+              || IsEqualGUID(iid, &IID_IDCompositionDeviceUnknown)
+              || IsEqualGUID(iid, &IID_IDCompositionDeviceUndocumented2))
     {
         IUnknown_AddRef(&device->IDCompositionDeviceUnknown_iface);
         *out = &device->IDCompositionDeviceUnknown_iface;
 
         if (IsEqualGUID(iid, &IID_IDCompositionDesktopDevicePartner)
-            || IsEqualGUID(iid, &IID_IDCompositionDeviceUnknown))
+            || IsEqualGUID(iid, &IID_IDCompositionDeviceUnknown)
+            || IsEqualGUID(iid, &IID_IDCompositionDeviceUndocumented2))
             FIXME("Returning undocumented interface %s %p.\n", wine_dbgstr_guid(iid), *out);
         return S_OK;
     }
